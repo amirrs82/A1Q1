@@ -42,5 +42,7 @@ public class Chat {
         this.id = id;
         this.name = name;
         addMember(owner);
+        owner.addChat(this);
+
     }
 }

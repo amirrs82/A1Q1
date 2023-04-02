@@ -40,7 +40,7 @@ public class ChatMenu {
 
     private String showMembers() {
         String members = "";
-        if (chat.getClass().equals(PrivateChat.class)) {
+        if (chat instanceof PrivateChat) {
             members += "Invalid command!";
         } else {
             members += "Members:";
@@ -74,7 +74,8 @@ public class ChatMenu {
 
     private String sendMessage(Matcher matcher) {
         if (hasAccessToSendMessage()) {
-            chat.addMessage(new Message(currentUser, matcher.group("message")));
+            String message = matcher.group("message");
+            chat.addMessage(new Message(currentUser, message));
             for (User member : chat.getMembers())
                 moveToFirst(member.getChats(), chat);
             return "Message has been sent successfully!";
@@ -82,15 +83,15 @@ public class ChatMenu {
     }
 
     private boolean hasAccessToSendMessage() {
-        return !chat.getClass().equals(Channel.class) || chat.getOwner().equals(currentUser);
+        return !(chat instanceof Channel) || chat.getOwner().equals(currentUser);
     }
 
     private boolean isPrivateChat(Chat chat) {
-        return chat.getClass().equals(PrivateChat.class);
+        return chat instanceof PrivateChat;
     }
 
     private boolean isGroup(Chat chat) {
-        return chat.getClass().equals(Group.class);
+        return chat instanceof Group;
     }
 
     private boolean isOwner(User user) {

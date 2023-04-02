@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 public class MessengerMenu {
     private Chat chat;
     private User currentUser;
-    private String chatType;
 
     public void run(Scanner scanner) {
         currentUser = Messenger.getCurrentUser();
@@ -32,20 +31,6 @@ public class MessengerMenu {
             else if ((matcher = Commands.getMatcher(input, Commands.START_NEW_PRIVATE_CHAT)) != null)
                 System.out.println(createPrivateChat(matcher));
             else if ((matcher = Commands.getMatcher(input, Commands.ENTER_CHAT)) != null) {
-                switch (matcher.group("chatType")) {
-                    case "group":
-                        chatType = "group";
-                        chat = currentUser.getGroupById(matcher.group("id"));
-                        break;
-                    case "channel":
-                        chatType = "channel";
-                        chat = currentUser.getChannelById(matcher.group("id"));
-                        break;
-                    case "private chat":
-                        chatType = "private chat";
-                        chat = currentUser.getPrivateChatById(matcher.group("id"));
-                        break;
-                }
                 String enterOutput = enterChat(matcher);
                 System.out.println(enterOutput);
                 if (enterOutput.equals("You have successfully entered the chat!")) new ChatMenu().run(scanner, chat);
@@ -72,54 +57,73 @@ public class MessengerMenu {
     }
 
     private String enterChat(Matcher matcher) {
+        String chatType = matcher.group("chatType");
+        String id = matcher.group("id");
+        switch (chatType) {
+            case "group":
+                chat = currentUser.getGroupById(id);
+                break;
+            case "channel":
+                chat = currentUser.getChannelById(id);
+                break;
+            case "private chat":
+                chat = currentUser.getPrivateChatById(id);
+                break;
+        }
         if (currentUser.getChats().contains(chat)) return "You have successfully entered the chat!";
         else return "You have no " + chatType + " with this id!";
     }
 
     private String createChannel(Matcher matcher) {
-        if (isValidName(matcher.group("name"))) if (!channelIdExists(matcher.group("id"))) {
-            Channel addedChannel = new Channel(currentUser, matcher.group("id"), matcher.group("name"));
-            Messenger.addChannel(addedChannel);
-            currentUser.addChannel(addedChannel);
-            moveToFirst(currentUser.getChats(), addedChannel);
-            return "Channel " + matcher.group("name") + " has been created successfully!";
-        } else return "A channel with this id already exists!";
+        String name = matcher.group("name");
+        String id = matcher.group("id");
+        if (isValidName(name))
+            if (!channelIdExists(id)) {
+                Channel addedChannel = new Channel(currentUser, id, name);
+                Messenger.addChannel(addedChannel);
+                moveToFirst(currentUser.getChats(), addedChannel);
+                return "Channel " + matcher.group("name") + " has been created successfully!";
+            } else return "A channel with this id already exists!";
         else return "Channel name's format is invalid!";
     }
 
     private String createGroup(Matcher matcher) {
-        if (isValidName(matcher.group("name"))) if (!groupIdExists(matcher.group("id"))) {
-            Group group = new Group(currentUser, matcher.group("id"), matcher.group("name"));
-            Messenger.addGroup(group);
-            currentUser.addGroup(group);
-            moveToFirst(currentUser.getChats(), group);
-            return "Group " + matcher.group("name") + " has been created successfully!";
-        } else return "A group with this id already exists!";
+        String name = matcher.group("name");
+        String id = matcher.group("id");
+        if (isValidName(name))
+            if (!groupIdExists(id)) {
+                Group group = new Group(currentUser, id, name);
+                Messenger.addGroup(group);
+                moveToFirst(currentUser.getChats(), group);
+                return "Group " + matcher.group("name") + " has been created successfully!";
+            } else return "A group with this id already exists!";
         else return "Group name's format is invalid!";
     }
 
     private String createPrivateChat(Matcher matcher) {
-        User addedToPrivateChat = Messenger.getUserById(matcher.group("id"));
-        if (addedToPrivateChat != null) if (currentUser.getPrivateChatById(matcher.group("id")) == null) {
-            PrivateChat pv = new PrivateChat(currentUser, addedToPrivateChat.getId(), addedToPrivateChat.getName());
-            addedToPrivateChat.addPrivateChat(pv);
-            pv.addMember(addedToPrivateChat);
-            if (currentUser != addedToPrivateChat) currentUser.addPrivateChat(pv);
-            moveToFirst(currentUser.getChats(), pv);
-            moveToFirst(addedToPrivateChat.getChats(), pv);
-            return "Private chat with " + addedToPrivateChat.getName() + " has been started successfully!";
-        } else return "You already have a private chat with this user!";
+        String id = matcher.group("id");
+        User addedToPrivateChat = Messenger.getUserById(id);
+        if (addedToPrivateChat != null)
+            if (currentUser.getPrivateChatById(id) == null) {
+                PrivateChat pv = new PrivateChat(currentUser, addedToPrivateChat.getId(), addedToPrivateChat.getName());
+                pv.addMember(addedToPrivateChat);
+                if (currentUser != addedToPrivateChat) addedToPrivateChat.addPrivateChat(pv);
+                moveToFirst(currentUser.getChats(), pv);
+                moveToFirst(addedToPrivateChat.getChats(), pv);
+                return "Private chat with " + addedToPrivateChat.getName() + " has been started successfully!";
+            } else return "You already have a private chat with this user!";
         else return "No user with this id exists!";
     }
 
     private String joinChannel(Matcher matcher) {
         Channel channelToJoin = Messenger.getChannelById(matcher.group("id"));
-        if (!isAlreadyInChat(currentUser, channelToJoin)) if (channelToJoin != null) {
-            currentUser.addChannel(channelToJoin);
-            moveToFirst(currentUser.getChats(), channelToJoin);
-            channelToJoin.getMembers().add(currentUser);
-            return "You have successfully joined the channel!";
-        } else return "No channel with this id exists!";
+        if (!isAlreadyInChat(currentUser, channelToJoin))
+            if (channelToJoin != null) {
+                currentUser.addChannel(channelToJoin);
+                moveToFirst(currentUser.getChats(), channelToJoin);
+                channelToJoin.getMembers().add(currentUser);
+                return "You have successfully joined the channel!";
+            } else return "No channel with this id exists!";
         else return "You're already a member of this channel!";
     }
 
@@ -153,5 +157,4 @@ public class MessengerMenu {
         chats.remove(chat);
         chats.add(0, chat);
     }
-
 }

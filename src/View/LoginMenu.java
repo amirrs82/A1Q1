@@ -8,6 +8,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LoginMenu {
+    private User loggedInUser = null;
+
     public void run(Scanner scanner) {
         while (true) {
             String input = scanner.nextLine();
@@ -20,7 +22,7 @@ public class LoginMenu {
                 String loginOutput = login(matcher);
                 System.out.println(login(matcher));
                 if (loginOutput.equals("User successfully logged in!")) {
-                    Messenger.setCurrentUser(Messenger.getUserById(matcher.group("id")));
+                    Messenger.setCurrentUser(loggedInUser);
                     new MessengerMenu().run(scanner);
                 }
             } else System.out.println("Invalid command!");
@@ -28,19 +30,23 @@ public class LoginMenu {
     }
 
     private String login(Matcher matcher) {
-        User loggedInUser = Messenger.getUserById(matcher.group("id"));
+        loggedInUser = Messenger.getUserById(matcher.group("id"));
+        String password = matcher.group("password");
         if (loggedInUser != null)
-            if (isCorrectPassword(loggedInUser, matcher.group("password")))
+            if (isCorrectPassword(loggedInUser, password))
                 return "User successfully logged in!";
             else return "Incorrect password!";
         else return "No user with this id exists!";
     }
 
     private String register(Matcher matcher) {
-        if (isValidUsername(matcher.group("username")))
-            if (isStrongPassword(matcher.group("password")))
-                if (!userAlreadyExist(matcher.group("id"))) {
-                    Messenger.addUser(new User(matcher.group("id"), matcher.group("username"), matcher.group("password")));
+        String username = matcher.group("username");
+        String password = matcher.group("password");
+        String id = matcher.group("id");
+        if (isValidUsername(username))
+            if (isStrongPassword(password))
+                if (!userAlreadyExist(id)) {
+                    Messenger.addUser(new User(id, username, password));
                     return "User has been created successfully!";
                 } else return "A user with this ID already exists!";
             else return "Password is weak!";
